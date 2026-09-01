@@ -1,7 +1,4 @@
 def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) -> dict:
-    """
-    Hitung skor 0-100 berdasarkan sinyal dan konfirmasi.
-    """
     signal = m15_setup.get("signal", "WAIT")
     if signal == "WAIT":
         return {"action": "WAIT", "score": 0}
@@ -16,9 +13,9 @@ def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) 
     elif bias == "BEARISH" and signal == "SELL":
         score += 50
     else:
-        return {"action": "WAIT", "score": 0}  # tidak selaras, langsung tolak
+        return {"action": "WAIT", "score": 0}
 
-    # Skor dari kekuatan tren (0-100 -> tambah maks 30)
+    # Skor dari kekuatan tren
     score += int(strength * 0.3)
 
     # Skor dari ADX
@@ -28,7 +25,7 @@ def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) 
     elif adx > 25:
         score += 5
 
-    # Skor dari RSI (tidak ekstrem)
+    # Skor dari RSI
     rsi = m30_context.get("rsi", 50)
     if 45 <= rsi <= 65:
         score += 10
@@ -41,7 +38,6 @@ def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) 
 
     score = min(score, 100)
 
-    # Hanya eksekusi jika skor >= 80
     if score >= 80:
         action = signal
     else:
