@@ -1,7 +1,7 @@
 """
-XAUUSD AI DERIV BOT - Super Premium Multi-Timeframe
+XAUUSD AI DERIV BOT - Super Premium Multi-Timeframe + Gemini AI
 Mengambil H4, H1, M30, M15 dan menganalisis dengan indikator lengkap.
-Sinyal hanya jika skor >= 80 dan semua filter terpenuhi.
+Sinyal hanya jika skor teknikal >= 80 dan dikonfirmasi oleh Gemini AI.
 Mode manual (tidak eksekusi order otomatis).
 """
 
@@ -17,7 +17,7 @@ from config.settings import (
     CANDLE_COUNT, ACCOUNT_BALANCE, MAX_RETRIES, RETRY_DELAY,
     HTTP_TIMEOUT, SEND_STARTUP_NOTIFICATION, MIN_SCORE,
     LONDON_OPEN_HOUR, LONDON_CLOSE_HOUR, NY_OPEN_HOUR, NY_CLOSE_HOUR,
-    MIN_ATR_VOLATILITY, ENABLE_SESSION_FILTER
+    MIN_ATR_VOLATILITY, ENABLE_SESSION_FILTER, USE_GEMINI
 )
 
 from strategy.indicators import add_all_indicators
@@ -26,6 +26,7 @@ from strategy.multi_timeframe import analyze_h4_h1
 from strategy.m15_setup import evaluate_m15_setup
 from strategy.dynamic_tp import calculate_dynamic_tp
 from ai.analyzer import calculate_signal_score
+from ai.gemini_analyzer import analyze_with_gemini
 from risk.engine import validate_risk
 from risk.position_size import calculate_position_size
 from telegram.anti_spam import check_anti_spam
@@ -111,7 +112,7 @@ def is_market_session():
 
 def main():
     logger.info("=" * 50)
-    logger.info("XAUUSD AI DERIV BOT - SUPER PREMIUM")
+    logger.info("XAUUSD AI DERIV BOT - SUPER PREMIUM + GEMINI")
     logger.info("=" * 50)
 
     try:
@@ -160,7 +161,7 @@ def main():
                 "=========================\n"
                 f"🔹 Harga: `{latest_price}`\n"
                 f"🔹 Waktu: `{latest_time}`\n"
-                "🔹 Mode: Analisis Multi-Timeframe (H4/H1/M30/M15)"
+                "🔹 Mode: Analisis Multi-Timeframe + Gemini AI"
             )
             safe_telegram_send(send_telegram_message, startup_msg)
 
@@ -190,7 +191,7 @@ def main():
         m15_setup = evaluate_m15_setup(df_m15, m30_context, patterns)
         logger.info(f"M15 Signal: {m15_setup.get('signal')} | Reason: {m15_setup.get('reason')}")
 
-        # Hitung skor sinyal
+        # Hitung skor teknikal
         signal_score = calculate_signal_score(m30_context, m15_setup, higher_tf)
         action = signal_score.get("action", "WAIT")
         score = signal_score.get("score", 0)
@@ -199,6 +200,30 @@ def main():
         if action not in ["BUY", "SELL"] or score < MIN_SCORE:
             logger.info(f"Skor {score} di bawah minimum {MIN_SCORE}. Tidak ada sinyal.")
             return
+
+        # Integrasi Gemini sebagai konfirmasi kedua
+        if USE_GEMINI:
+            logger.info("Meminta konfirmasi dari Gemini AI...")
+            gemini_data = {
+                "bias": higher_tf.get("bias"),
+                "strength": higher_tf.get("strength"),
+                "adx": higher_tf.get("adx"),
+                "rsi": higher_tf.get("rsi"),
+                "m15_signal": m15_setup.get("signal"),
+                "m15_reason": m15_setup.get("reason"),
+                "patterns": ", ".join([k for k, v in patterns.items() if v])
+            }
+            gemini_result = analyze_with_gemini(gemini_data)
+            logger.info(f"Hasil Gemini: {gemini_result}")
+
+            # Hanya lanjut jika Gemini setuju dengan aksi teknikal
+            if gemini_result.get("action") != action:
+                logger.info("Gemini tidak setuju, sinyal dibatalkan.")
+                return
+            # Confidence Gemini harus cukup tinggi
+            if gemini_result.get("confidence", 0) < 60:
+                logger.info("Confidence Gemini rendah, sinyal dibatalkan.")
+                return
 
         # Hitung TP/SL
         current_price = df_m15.iloc[-1]['close']
