@@ -1,10 +1,6 @@
 import pandas as pd
 
 def detect_patterns(df: pd.DataFrame) -> dict:
-    """
-    Deteksi pola candlestick umum pada timeframe M15.
-    Mengembalikan dict dengan boolean untuk setiap pola.
-    """
     if len(df) < 3:
         return {}
 
@@ -30,26 +26,17 @@ def detect_patterns(df: pd.DataFrame) -> dict:
         last['open'] > prev['close']
     )
 
-    # Pin Bar Bullish (lower shadow panjang, upper kecil)
+    # Pin Bar Bullish
     body = abs(last['close'] - last['open'])
     lower_shadow = last['open'] - last['low'] if last['close'] > last['open'] else last['close'] - last['low']
     upper_shadow = last['high'] - last['close'] if last['close'] > last['open'] else last['high'] - last['open']
-    patterns['bullish_pinbar'] = (
-        lower_shadow > 2 * body and
-        upper_shadow < body
-    )
+    patterns['bullish_pinbar'] = lower_shadow > 2 * body and upper_shadow < body
 
     # Pin Bar Bearish
-    patterns['bearish_pinbar'] = (
-        upper_shadow > 2 * body and
-        lower_shadow < body
-    )
+    patterns['bearish_pinbar'] = upper_shadow > 2 * body and lower_shadow < body
 
     # Inside Bar
-    patterns['inside_bar'] = (
-        last['high'] < prev['high'] and
-        last['low'] > prev['low']
-    )
+    patterns['inside_bar'] = last['high'] < prev['high'] and last['low'] > prev['low']
 
     # Doji
     patterns['doji'] = abs(last['close'] - last['open']) < 0.1 * (last['high'] - last['low'])
