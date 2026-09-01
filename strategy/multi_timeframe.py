@@ -1,10 +1,6 @@
 import pandas as pd
 
 def analyze_h4_h1(df_h4: pd.DataFrame, df_h1: pd.DataFrame) -> dict:
-    """
-    Analisis tren besar berdasarkan H4 dan H1.
-    Menggabungkan EMA, MACD, ADX, Ichimoku.
-    """
     if df_h4.empty or df_h1.empty:
         return {"bias": "NEUTRAL", "strength": 0, "structure": "Data insufficient"}
 
