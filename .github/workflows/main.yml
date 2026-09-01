@@ -1,0 +1,50 @@
+name: Run XAUUSD Bot
+
+on:
+  schedule:
+    # Jalankan setiap 15 menit (sesuaikan kebutuhan)
+    - cron: '*/15 * * * *'
+  workflow_dispatch:   # Memungkinkan trigger manual dari tab Actions
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run bot
+        env:
+          SYMBOL: ${{ secrets.SYMBOL }}
+          APP_ID: ${{ secrets.APP_ID }}
+          GRANULARITY_H4: ${{ secrets.GRANULARITY_H4 }}
+          GRANULARITY_H1: ${{ secrets.GRANULARITY_H1 }}
+          GRANULARITY_M30: ${{ secrets.GRANULARITY_M30 }}
+          GRANULARITY_M15: ${{ secrets.GRANULARITY_M15 }}
+          CANDLE_COUNT: ${{ secrets.CANDLE_COUNT }}
+          ACCOUNT_BALANCE: ${{ secrets.ACCOUNT_BALANCE }}
+          MAX_RETRIES: ${{ secrets.MAX_RETRIES }}
+          RETRY_DELAY: ${{ secrets.RETRY_DELAY }}
+          HTTP_TIMEOUT: ${{ secrets.HTTP_TIMEOUT }}
+          SEND_STARTUP_NOTIFICATION: ${{ secrets.SEND_STARTUP_NOTIFICATION }}
+          MIN_SCORE: ${{ secrets.MIN_SCORE }}
+          LONDON_OPEN_HOUR: ${{ secrets.LONDON_OPEN_HOUR }}
+          LONDON_CLOSE_HOUR: ${{ secrets.LONDON_CLOSE_HOUR }}
+          NY_OPEN_HOUR: ${{ secrets.NY_OPEN_HOUR }}
+          NY_CLOSE_HOUR: ${{ secrets.NY_CLOSE_HOUR }}
+          MIN_ATR_VOLATILITY: ${{ secrets.MIN_ATR_VOLATILITY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+        run: python main.py
