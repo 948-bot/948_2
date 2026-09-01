@@ -6,7 +6,6 @@ load_dotenv()
 
 
 def _get_env(key: str, default: str = "") -> str:
-    """Ambil env var, jika kosong atau None kembalikan default."""
     value = os.getenv(key)
     if value is None or value.strip() == "":
         return default
@@ -14,7 +13,6 @@ def _get_env(key: str, default: str = "") -> str:
 
 
 def _get_env_int(key: str, default: int) -> int:
-    """Ambil env var sebagai integer, fallback ke default jika kosong/invalid."""
     raw = _get_env(key, str(default))
     try:
         return int(raw)
@@ -23,7 +21,6 @@ def _get_env_int(key: str, default: int) -> int:
 
 
 def _get_env_float(key: str, default: float) -> float:
-    """Ambil env var sebagai float, fallback ke default jika kosong/invalid."""
     raw = _get_env(key, str(default))
     try:
         return float(raw)
@@ -32,7 +29,6 @@ def _get_env_float(key: str, default: float) -> float:
 
 
 def _get_env_bool(key: str, default: bool) -> bool:
-    """Ambil env var sebagai boolean, fallback ke default jika kosong/invalid."""
     raw = _get_env(key, str(default)).lower()
     if raw in ("true", "1", "yes"):
         return True
@@ -59,7 +55,9 @@ HTTP_TIMEOUT = _get_env_int("HTTP_TIMEOUT", 10)
 SEND_STARTUP_NOTIFICATION = _get_env_bool("SEND_STARTUP_NOTIFICATION", True)
 MIN_SCORE = _get_env_float("MIN_SCORE", 80.0)
 
-# Filter sesi pasar (UTC)
+# Filter sesi pasar (UTC) - **AKTIFKAN / NONAKTIFKAN DI SINI**
+ENABLE_SESSION_FILTER = _get_env_bool("ENABLE_SESSION_FILTER", False)  # False = bot jalan 24 jam (hari kerja)
+
 LONDON_OPEN_HOUR = _get_env_int("LONDON_OPEN_HOUR", 8)
 LONDON_CLOSE_HOUR = _get_env_int("LONDON_CLOSE_HOUR", 16)
 NY_OPEN_HOUR = _get_env_int("NY_OPEN_HOUR", 13)
