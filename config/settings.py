@@ -14,13 +14,13 @@ GRANULARITY_H1 = int(os.getenv("GRANULARITY_H1", 3600))
 GRANULARITY_M30 = int(os.getenv("GRANULARITY_M30", 1800))
 GRANULARITY_M15 = int(os.getenv("GRANULARITY_M15", 900))
 
-CANDLE_COUNT = int(os.getenv("CANDLE_COUNT", 100))  # Perlu cukup untuk indikator
+CANDLE_COUNT = int(os.getenv("CANDLE_COUNT", 200))  # Cukup untuk indikator
 ACCOUNT_BALANCE = float(os.getenv("ACCOUNT_BALANCE", 10000.0))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", 3))
 RETRY_DELAY = int(os.getenv("RETRY_DELAY", 5))
 HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", 10))
 SEND_STARTUP_NOTIFICATION = os.getenv("SEND_STARTUP_NOTIFICATION", "True").lower() == "true"
-MIN_SCORE = float(os.getenv("MIN_SCORE", 80.0))  # Naikkan threshold
+MIN_SCORE = float(os.getenv("MIN_SCORE", 80.0))
 
 # Filter sesi pasar (UTC)
 LONDON_OPEN_HOUR = int(os.getenv("LONDON_OPEN_HOUR", 8))
