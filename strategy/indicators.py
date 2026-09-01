@@ -58,15 +58,15 @@ def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
     low_14 = df['low'].rolling(window=14).min()
     df['williams_r'] = -100 * ((high_14 - df['close']) / (high_14 - low_14))
 
-    # CCI (Commodity Channel Index)
+    # CCI
     tp = (df['high'] + df['low'] + df['close']) / 3
     sma_tp = tp.rolling(window=20).mean()
     mad = tp.rolling(window=20).apply(lambda x: np.mean(np.abs(x - x.mean())), raw=True)
     df['cci'] = (tp - sma_tp) / (0.015 * mad)
 
-    # Parabolic SAR (sederhana, asumsi step 0.02, max 0.2)
+    # Parabolic SAR (sederhana)
     df['sar'] = df['close'].copy()
-    df['sar_trend'] = 1  # 1 = up, -1 = down
+    df['sar_trend'] = 1
     af = 0.02
     max_af = 0.2
     ep = df['low'].iloc[0]
@@ -98,7 +98,7 @@ def add_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
         df.loc[df.index[i], 'sar'] = sar
         df.loc[df.index[i], 'sar_trend'] = trend
 
-    # Ichimoku Cloud (sederhana)
+    # Ichimoku Cloud
     high_9 = df['high'].rolling(window=9).max()
     low_9 = df['low'].rolling(window=9).min()
     df['tenkan_sen'] = (high_9 + low_9) / 2
