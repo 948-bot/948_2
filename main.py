@@ -7,7 +7,8 @@ Mode manual (tidak eksekusi order otomatis).
 
 import time
 import logging
-import requests
+import json
+import websocket
 import pandas as pd
 from datetime import datetime, time as dt_time
 
@@ -56,46 +57,69 @@ def safe_telegram_send(func, *args, **kwargs):
         return False
 
 
-def fetch_deriv_candles_http(granularity, count=CANDLE_COUNT, retries=MAX_RETRIES):
-    url = "https://api.deriv.com/v3/ticks_history"
-    params = {
-        "ticks_history": SYMBOL,
-        "adjust_start_time": 1,
-        "count": count,
-        "end": "latest",
-        "granularity": granularity,
-        "style": "candles",
-        "app_id": APP_ID
-    }
+def fetch_deriv_candles_ws(granularity: int, count: int = CANDLE_COUNT, retries: int = MAX_RETRIES) -> pd.DataFrame:
+    """
+    Mengambil data candle dari Deriv via WebSocket.
+    Lebih stabil dibanding HTTP API untuk keperluan bot ini.
+    """
+    sym = SYMBOL
+    app_id = APP_ID
+    ws_url = f"wss://ws.derivws.com/websockets/v3?app_id={app_id}"
+
     for attempt in range(1, retries + 1):
+        raw_candles = []
+        error_msg = ""
+
+        def on_message(ws, message):
+            nonlocal raw_candles, error_msg
+            data = json.loads(message)
+            msg_type = data.get("msg_type")
+            if msg_type == "candles":
+                raw_candles.extend(data.get("candles", []))
+                ws.close()
+            elif msg_type == "error":
+                error_msg = data.get("error", {}).get("message", "Unknown error")
+                ws.close()
+
+        def on_error(ws, error):
+            nonlocal error_msg
+            error_msg = str(error)
+
+        def on_open(ws):
+            payload = {
+                "ticks_history": sym,
+                "adjust_start_time": 1,
+                "count": count,
+                "end": "latest",
+                "granularity": granularity,
+                "style": "candles"
+            }
+            ws.send(json.dumps(payload))
+
         try:
-            logger.info(f"Mengambil data {granularity}s (percobaan {attempt}/{retries})...")
-            response = requests.get(url, params=params, timeout=HTTP_TIMEOUT)
-            response.raise_for_status()
-            data = response.json()
-            if "error" in data:
-                raise Exception(f"API error: {data['error']}")
-            candles = data.get("candles", [])
-            if not candles:
-                raise Exception("Data candles kosong")
-            df = pd.DataFrame(candles)
-            df['time'] = pd.to_datetime(df['epoch'], unit='s')
-            df['open'] = df['open'].astype(float)
-            df['high'] = df['high'].astype(float)
-            df['low'] = df['low'].astype(float)
-            df['close'] = df['close'].astype(float)
-            if df.isnull().any().any() or (df[['open', 'high', 'low', 'close']] <= 0).any().any():
-                raise Exception("Data tidak valid")
-            logger.info(f"Berhasil mengambil {len(df)} candle {granularity}s")
-            return df
-        except requests.exceptions.Timeout:
-            logger.warning(f"Timeout (percobaan {attempt})")
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Request error: {e} (percobaan {attempt})")
+            logger.info(f"Mengambil data {granularity}s via WebSocket (percobaan {attempt}/{retries})...")
+            ws = websocket.WebSocketApp(ws_url, on_open=on_open, on_message=on_message, on_error=on_error)
+            ws.run_forever(ping_timeout=10)
+
+            if raw_candles:
+                df = pd.DataFrame(raw_candles)
+                df['time'] = pd.to_datetime(df['epoch'], unit='s')
+                df['open'] = df['open'].astype(float)
+                df['high'] = df['high'].astype(float)
+                df['low'] = df['low'].astype(float)
+                df['close'] = df['close'].astype(float)
+
+                if df.isnull().any().any() or (df[['open', 'high', 'low', 'close']] <= 0).any().any():
+                    raise Exception("Data candle tidak valid")
+                logger.info(f"Berhasil mengambil {len(df)} candle {granularity}s")
+                return df
+            else:
+                raise Exception(f"Tidak ada data: {error_msg}")
         except Exception as e:
-            logger.warning(f"Error: {e} (percobaan {attempt})")
-        if attempt < retries:
-            time.sleep(RETRY_DELAY)
+            logger.warning(f"Error WebSocket: {e} (percobaan {attempt})")
+            if attempt < retries:
+                time.sleep(RETRY_DELAY)
+
     logger.error(f"Gagal mengambil data {granularity}s setelah {retries} percobaan")
     return pd.DataFrame()
 
@@ -133,11 +157,11 @@ def main():
             logger.info("Di luar sesi pasar London/NY. Bot OFF.")
             return
 
-        # Ambil data multi-timeframe
-        df_h4 = fetch_deriv_candles_http(GRANULARITY_H4)
-        df_h1 = fetch_deriv_candles_http(GRANULARITY_H1)
-        df_m30 = fetch_deriv_candles_http(GRANULARITY_M30)
-        df_m15 = fetch_deriv_candles_http(GRANULARITY_M15)
+        # Ambil data multi-timeframe via WebSocket
+        df_h4 = fetch_deriv_candles_ws(GRANULARITY_H4)
+        df_h1 = fetch_deriv_candles_ws(GRANULARITY_H1)
+        df_m30 = fetch_deriv_candles_ws(GRANULARITY_M30)
+        df_m15 = fetch_deriv_candles_ws(GRANULARITY_M15)
 
         if any(df.empty for df in [df_h4, df_h1, df_m30, df_m15]):
             err_txt = "Gagal mendapatkan data pasar (salah satu timeframe kosong)."
@@ -216,11 +240,9 @@ def main():
             gemini_result = analyze_with_gemini(gemini_data)
             logger.info(f"Hasil Gemini: {gemini_result}")
 
-            # Hanya lanjut jika Gemini setuju dengan aksi teknikal
             if gemini_result.get("action") != action:
                 logger.info("Gemini tidak setuju, sinyal dibatalkan.")
                 return
-            # Confidence Gemini harus cukup tinggi
             if gemini_result.get("confidence", 0) < 60:
                 logger.info("Confidence Gemini rendah, sinyal dibatalkan.")
                 return
@@ -240,7 +262,6 @@ def main():
             logger.error("TP/SL tidak terdefinisi")
             return
 
-        # Validasi TP/SL
         if action == "BUY":
             if not (signal_payload["tp"] > current_price > signal_payload["sl"]):
                 logger.error("TP/SL tidak valid untuk BUY")
@@ -250,23 +271,19 @@ def main():
                 logger.error("TP/SL tidak valid untuk SELL")
                 return
 
-        # Validasi risiko
         is_risk_ok, risk_msg = validate_risk(signal_payload, action)
         if not is_risk_ok:
             logger.warning(f"Sinyal ditolak Risk Engine: {risk_msg}")
             safe_telegram_send(send_error_notification, f"Sinyal ditolak: {risk_msg}")
             return
 
-        # Anti-spam
         if not check_anti_spam(action, current_price):
             logger.info("Sinyal dicegah oleh Anti-Spam (cooldown aktif).")
             return
 
-        # Hitung ukuran posisi
         risk_calc = calculate_position_size(ACCOUNT_BALANCE, current_price, signal_payload["sl"])
         logger.info(f"Ukuran posisi: {risk_calc}")
 
-        # Catat ke database dan kirim notifikasi
         logger.info("Mengirim notifikasi & mencatat sinyal...")
         log_signal_to_db(signal_payload, action, score, risk_calc)
         safe_telegram_send(send_signal_notification, signal_payload, action, score, risk_calc, m30_context, higher_tf, patterns)
