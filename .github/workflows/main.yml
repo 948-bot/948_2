@@ -2,8 +2,8 @@ name: Run XAUUSD Bot
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # setiap 15 menit, sesuaikan
-  workflow_dispatch:          # trigger manual
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -24,11 +24,8 @@ jobs:
 
       - name: Run bot
         env:
-          # Set false untuk nonaktifkan filter sesi (bot aktif 24 jam hari kerja)
-          ENABLE_SESSION_FILTER: "false"
-          # Token Telegram (kosongkan jika belum siap, tapi bot akan error di validasi)
-          # Untuk testing tanpa token, set REQUIRE_TELEGRAM=false di settings.py dan tambahkan env di bawah
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # Jika ingin mengubah parameter lain, tambahkan di sini
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          USE_GEMINI: "true"
         run: python main.py
