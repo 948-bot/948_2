@@ -1,9 +1,6 @@
 import pandas as pd
 
 def evaluate_m15_setup(df: pd.DataFrame, m30_context: dict, patterns: dict) -> dict:
-    """
-    Evaluasi setup M15 dengan multi-konfirmasi dan pola candlestick.
-    """
     if df.empty or len(df) < 30:
         return {"signal": "WAIT", "reason": "Data insufficient"}
 
@@ -24,7 +21,6 @@ def evaluate_m15_setup(df: pd.DataFrame, m30_context: dict, patterns: dict) -> d
     near_bb_lower = last['close'] <= last['bb_lower'] * 1.01
     near_bb_upper = last['close'] >= last['bb_upper'] * 0.99
 
-    # Pola candlestick
     bullish_pattern = patterns.get('bullish_engulfing', False) or patterns.get('bullish_pinbar', False)
     bearish_pattern = patterns.get('bearish_engulfing', False) or patterns.get('bearish_pinbar', False)
 
@@ -34,7 +30,7 @@ def evaluate_m15_setup(df: pd.DataFrame, m30_context: dict, patterns: dict) -> d
             rsi_ok_buy,
             macd_hist_rising,
             stoch_cross_up or near_bb_lower,
-            bullish_pattern  # wajib ada pola bullish
+            bullish_pattern
         ]
         if all(buy_conditions):
             return {"signal": "BUY", "reason": "Konfirmasi bullish lengkap (pola + indikator)"}
@@ -45,7 +41,7 @@ def evaluate_m15_setup(df: pd.DataFrame, m30_context: dict, patterns: dict) -> d
             rsi_ok_sell,
             macd_hist_falling,
             stoch_cross_down or near_bb_upper,
-            bearish_pattern  # wajib ada pola bearish
+            bearish_pattern
         ]
         if all(sell_conditions):
             return {"signal": "SELL", "reason": "Konfirmasi bearish lengkap (pola + indikator)"}
