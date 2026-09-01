@@ -70,6 +70,10 @@ MIN_ATR_VOLATILITY = _get_env_float("MIN_ATR_VOLATILITY", 2.5)
 TELEGRAM_BOT_TOKEN = _get_env("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = _get_env("TELEGRAM_CHAT_ID", "")
 
+# Gemini AI
+GEMINI_API_KEY = _get_env("GEMINI_API_KEY", "")
+USE_GEMINI = _get_env_bool("USE_GEMINI", True)   # default aktif
+
 # Logging
 LOG_LEVEL = _get_env("LOG_LEVEL", "INFO")
 
@@ -81,6 +85,8 @@ def validate_basic_config():
         return False, "ACCOUNT_BALANCE harus > 0"
     if MIN_SCORE < 0 or MIN_SCORE > 100:
         return False, "MIN_SCORE harus antara 0-100"
+    if USE_GEMINI and not GEMINI_API_KEY:
+        return False, "USE_GEMINI aktif tetapi GEMINI_API_KEY belum diatur"
     return True, "OK"
 
 
