@@ -1,12 +1,8 @@
 """
-XAUUSD AI DERIV BOT - Super Premium (Multi-Timeframe)
-- Mengambil data H4, H1, M30, M15
-- Analisis tren besar (H4, H1) untuk konfirmasi arah
-- Sinyal hanya jika semua timeframe selaras
-- Skor minimal 80/100
-- Filter sesi London/NY + volatilitas minimum
-- Notifikasi Telegram detail
-- Mode manual (tidak eksekusi otomatis)
+XAUUSD AI DERIV BOT - Super Premium Multi-Timeframe
+Mengambil H4, H1, M30, M15 dan menganalisis dengan indikator lengkap.
+Sinyal hanya jika skor >= 80 dan semua filter terpenuhi.
+Mode manual (tidak eksekusi order otomatis).
 """
 
 import time
@@ -14,7 +10,6 @@ import logging
 import requests
 import pandas as pd
 from datetime import datetime, time as dt_time
-from typing import Optional, Dict, Any, Tuple
 
 from config.settings import (
     validate_basic_config, is_trading_day, LOG_LEVEL,
@@ -51,7 +46,7 @@ logging.basicConfig(
 logger = logging.getLogger("XAUUSD_BOT")
 
 
-def safe_telegram_send(func, *args, **kwargs) -> bool:
+def safe_telegram_send(func, *args, **kwargs):
     try:
         func(*args, **kwargs)
         return True
@@ -60,7 +55,7 @@ def safe_telegram_send(func, *args, **kwargs) -> bool:
         return False
 
 
-def fetch_deriv_candles_http(granularity: int, count: int = CANDLE_COUNT, retries: int = MAX_RETRIES) -> pd.DataFrame:
+def fetch_deriv_candles_http(granularity, count=CANDLE_COUNT, retries=MAX_RETRIES):
     url = "https://api.deriv.com/v3/ticks_history"
     params = {
         "ticks_history": SYMBOL,
@@ -71,7 +66,6 @@ def fetch_deriv_candles_http(granularity: int, count: int = CANDLE_COUNT, retrie
         "style": "candles",
         "app_id": APP_ID
     }
-
     for attempt in range(1, retries + 1):
         try:
             logger.info(f"Mengambil data {granularity}s (percobaan {attempt}/{retries})...")
@@ -105,7 +99,7 @@ def fetch_deriv_candles_http(granularity: int, count: int = CANDLE_COUNT, retrie
     return pd.DataFrame()
 
 
-def is_market_session() -> bool:
+def is_market_session():
     now = datetime.utcnow()
     current_time = now.time()
     london = dt_time(LONDON_OPEN_HOUR, 0) <= current_time <= dt_time(LONDON_CLOSE_HOUR, 0)
