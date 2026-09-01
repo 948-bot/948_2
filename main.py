@@ -17,7 +17,7 @@ from config.settings import (
     CANDLE_COUNT, ACCOUNT_BALANCE, MAX_RETRIES, RETRY_DELAY,
     HTTP_TIMEOUT, SEND_STARTUP_NOTIFICATION, MIN_SCORE,
     LONDON_OPEN_HOUR, LONDON_CLOSE_HOUR, NY_OPEN_HOUR, NY_CLOSE_HOUR,
-    MIN_ATR_VOLATILITY
+    MIN_ATR_VOLATILITY, ENABLE_SESSION_FILTER
 )
 
 from strategy.indicators import add_all_indicators
@@ -100,6 +100,8 @@ def fetch_deriv_candles_http(granularity, count=CANDLE_COUNT, retries=MAX_RETRIE
 
 
 def is_market_session():
+    if not ENABLE_SESSION_FILTER:
+        return True   # Bot aktif di semua sesi
     now = datetime.utcnow()
     current_time = now.time()
     london = dt_time(LONDON_OPEN_HOUR, 0) <= current_time <= dt_time(LONDON_CLOSE_HOUR, 0)
