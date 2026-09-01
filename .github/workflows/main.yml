@@ -2,14 +2,12 @@ name: Run XAUUSD Bot
 
 on:
   schedule:
-    # Jalankan setiap 15 menit (sesuaikan kebutuhan)
-    - cron: '*/15 * * * *'
-  workflow_dispatch:   # Memungkinkan trigger manual dari tab Actions
+    - cron: '*/15 * * * *'   # setiap 15 menit, sesuaikan
+  workflow_dispatch:          # trigger manual
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,25 +24,11 @@ jobs:
 
       - name: Run bot
         env:
-          SYMBOL: ${{ secrets.SYMBOL }}
-          APP_ID: ${{ secrets.APP_ID }}
-          GRANULARITY_H4: ${{ secrets.GRANULARITY_H4 }}
-          GRANULARITY_H1: ${{ secrets.GRANULARITY_H1 }}
-          GRANULARITY_M30: ${{ secrets.GRANULARITY_M30 }}
-          GRANULARITY_M15: ${{ secrets.GRANULARITY_M15 }}
-          CANDLE_COUNT: ${{ secrets.CANDLE_COUNT }}
-          ACCOUNT_BALANCE: ${{ secrets.ACCOUNT_BALANCE }}
-          MAX_RETRIES: ${{ secrets.MAX_RETRIES }}
-          RETRY_DELAY: ${{ secrets.RETRY_DELAY }}
-          HTTP_TIMEOUT: ${{ secrets.HTTP_TIMEOUT }}
-          SEND_STARTUP_NOTIFICATION: ${{ secrets.SEND_STARTUP_NOTIFICATION }}
-          MIN_SCORE: ${{ secrets.MIN_SCORE }}
-          LONDON_OPEN_HOUR: ${{ secrets.LONDON_OPEN_HOUR }}
-          LONDON_CLOSE_HOUR: ${{ secrets.LONDON_CLOSE_HOUR }}
-          NY_OPEN_HOUR: ${{ secrets.NY_OPEN_HOUR }}
-          NY_CLOSE_HOUR: ${{ secrets.NY_CLOSE_HOUR }}
-          MIN_ATR_VOLATILITY: ${{ secrets.MIN_ATR_VOLATILITY }}
+          # Hanya set variabel yang memang ingin di-override.
+          # Untuk yang tidak diset, bot akan memakai default dari settings.py
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          LOG_LEVEL: ${{ secrets.LOG_LEVEL }}
+          # Jika ingin mengubah parameter lain, tambahkan di sini,
+          # misalnya:
+          # MIN_SCORE: ${{ secrets.MIN_SCORE }}
         run: python main.py
