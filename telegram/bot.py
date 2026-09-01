@@ -19,7 +19,6 @@ def send_signal_notification(signal_payload, action, score, risk_calc, m30_conte
     risk_amount = risk_calc.get("risk_amount")
     atr = signal_payload.get("atr")
 
-    # Format pola yang terdeteksi
     pattern_names = [k for k, v in patterns.items() if v]
     patterns_str = ", ".join(pattern_names) if pattern_names else "Tidak ada"
 
