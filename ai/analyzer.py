@@ -1,3 +1,5 @@
+from config.settings import MIN_SCORE
+
 def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) -> dict:
     signal = m15_setup.get("signal", "WAIT")
     if signal == "WAIT":
@@ -38,7 +40,8 @@ def calculate_signal_score(m30_context: dict, m15_setup: dict, higher_tf: dict) 
 
     score = min(score, 100)
 
-    if score >= 80:
+    # Disesuaikan otomatis menggunakan MIN_SCORE dari config (standar 70)
+    if score >= MIN_SCORE:
         action = signal
     else:
         action = "WAIT"
