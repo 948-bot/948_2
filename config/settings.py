@@ -53,7 +53,7 @@ MAX_RETRIES = _get_env_int("MAX_RETRIES", 3)
 RETRY_DELAY = _get_env_int("RETRY_DELAY", 5)
 HTTP_TIMEOUT = _get_env_int("HTTP_TIMEOUT", 10)
 SEND_STARTUP_NOTIFICATION = _get_env_bool("SEND_STARTUP_NOTIFICATION", True)
-MIN_SCORE = _get_env_float("MIN_SCORE", 80.0)
+MIN_SCORE = _get_env_float("MIN_SCORE", 63.0)
 
 # Filter sesi pasar (UTC) - **AKTIFKAN / NONAKTIFKAN DI SINI**
 ENABLE_SESSION_FILTER = _get_env_bool("ENABLE_SESSION_FILTER", False)  # False = bot jalan 24 jam (hari kerja)
